@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>矩陣乘法練習卷生成器</title>
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?version=4.8.0&features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body {
+      font-family: "DFKai-sb", sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-family: monospace;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    .output {
+      margin-top: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+    }
+    .latex {
+      margin-bottom: 10px;
+    }
+    @media print {
+      .printNoShow {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1 class="printNoShow">矩陣乘法 ➡ 國小乘法練習卷生成器</h1>
+  <div class="printNoShow">
+    <p>選擇矩陣大小：</p>
+    <label><input type="radio" name="matrixSize" value="2" id="matrix2x2"> 2×2 矩陣</label>
+    <label><input type="radio" name="matrixSize" value="3" id="matrix3x3" checked> 3×3 矩陣</label>
+  </div>
+  <p class="printNoShow">輸入矩陣與向量，例如：</p>
+  <pre class="printNoShow">a = [1,2,3;4,5,6;7,8,9]; d = [4,8,2]';</pre>
+  <textarea id="inputArea" class="printNoShow">a = [1,2,3;4,5,6;7,8,9]; d = [4,8,2]';</textarea>
+  <br class="printNoShow">
+  <button onclick="generate()" class="printNoShow">生成練習題</button>
+<h2>七上數學 整數的乘除與四則運算 預習卷</h2>
+  <div class="output" id="output"></div>
+
+  <script>
+    // Default examples for each matrix size
+    const examples = {
+      '2': "a = [1,2;3,4]; d = [5,6]';",
+      '3': "a = [1,2,3;4,5,6;7,8,9]; d = [4,8,2]';"
+    };
+
+    // Update example text when matrix size is selected
+    document.getElementById("matrix2x2").addEventListener("change", updateExample);
+    document.getElementById("matrix3x3").addEventListener("change", updateExample);
+
+    function updateExample() {
+      const size = document.querySelector('input[name="matrixSize"]:checked').value;
+      document.getElementById("inputArea").value = examples[size];
+    }
+
+    function parseMatrix(str) {
+      str = str.replace(/\s/g, '');
+      const rows = str.split(';').map(row => row.split(',').map(Number));
+      return rows;
+    }
+
+    function parseInput(input) {
+      const aMatch = input.match(/a\s*=\s*\[([^\]]+)\]/i);
+      const dMatch = input.match(/d\s*=\s*\[([^\]]+)\]'/i);
+
+      if (!aMatch || !dMatch) return null;
+
+      const a = parseMatrix(aMatch[1]);
+      const d = dMatch[1].split(',').map(Number);
+      return { a, d };
+    }
+
+    function generate() {
+      const input = document.getElementById("inputArea").value;
+      const parsed = parseInput(input);
+      const outputDiv = document.getElementById("output");
+      outputDiv.innerHTML = "";
+
+      if (!parsed) {
+        outputDiv.innerHTML = "輸入格式錯誤，請確認格式為 a=[...]; d=[...]';";
+        return;
+      }
+
+      const { a, d } = parsed;
+      let html = "";
+
+      for (let i = 0; i < a.length; i++) {
+        const row = a[i];
+        const terms = row.map((val, j) => `${val} \\times ${d[j]}`).filter((_, j) => j < d.length);
+        const sum = row.reduce((acc, val, j) => j < d.length ? acc + val * d[j] : acc, 0);
+        const latex = `(${i+1})\\quad ${terms.join(' + ')} = \\boxed{\\phantom{000000000}\\vphantom{\\begin{matrix} a \\\\ b \\end{matrix}}}`;
+        //0000....為長度控制器，其他為高度控制器
+        html += `<div class="latex">\\(${latex}\\)</div>`;
+      }
+
+      outputDiv.innerHTML = html;
+      MathJax.typeset();
+    }
+
+    // Initialize with default example
+    window.onload = function() {
+      updateExample();
+    };
+  </script>
+</body>
+</html>
