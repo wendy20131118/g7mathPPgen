@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>網路速度單位轉換練習卷生成器</title>
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?version=4.8.0&features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body {
+      font-family: "DFKai-sb", sans-serif;
+      padding: 20px;
+      background: #f9f9f9;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-family: monospace;
+    }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    .output {
+      margin-top: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+    }
+    .latex {
+      margin-bottom: 10px;
+    }
+    .settings {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f0f0f0;
+      border-radius: 8px;
+    }
+    .settings label {
+      display: inline-block;
+      margin-right: 15px;
+    }
+    table {
+      margin-top: 10px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    input[type="number"] {
+      width: 80px;
+    }
+    @media print {
+      .printNoShow {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1 class="printNoShow">網路速度單位轉換練習卷生成器</h1>
+  <div class="settings printNoShow">
+    <p><b>選擇轉換類型：</b></p>
+    <label><input type="radio" name="conversionType" value="mbps_to_MBs" id="mbpsToMBs" checked> 由 Mbps 轉換為 MB/s (÷8)</label>
+    <label><input type="radio" name="conversionType" value="MBs_to_mbps" id="MBsToMbps"> 由 MB/s 轉換為 Mbps (×8)</label>
+    
+    <div id="lossRateSetting">
+      <p><b>設定網速減損率 (ISP廣告速度 → 實際速度)：</b></p>
+      <input type="range" id="lossRate" min="50" max="100" value="90" step="5">
+      <span id="lossRateValue">90%</span>
+    </div>
+    
+    <div id="valueSetting">
+      <p><b>請輸入題目數值 (逗號分隔)：</b></p>
+      <input type="text" id="inputValues" value="100, 200, 300, 500, 1000">
+      <p><small>建議數字：Mbps常見值如100、300、500、1000，MB/s常見值如10、25、50、100。</small></p>
+    </div>
+    
+    <button onclick="generate()" class="printNoShow">生成練習題</button>
+  </div>
+  
+  <h2>七上數學 網路速度單位轉換練習卷</h2>
+  <div class="output" id="output"></div>
+  <script>
+    // Update loss rate display when slider changes
+    document.getElementById("lossRate").addEventListener("input", function() {
+      document.getElementById("lossRateValue").textContent = this.value + "%";
+    });
+    
+    // Switch between conversion types
+    document.getElementById("mbpsToMBs").addEventListener("change", updatePlaceholder);
+    document.getElementById("MBsToMbps").addEventListener("change", updatePlaceholder);
+    
+    function updatePlaceholder() {
+      const conversionType = document.querySelector('input[name="conversionType"]:checked').value;
+      const inputValues = document.getElementById("inputValues");
+      
+      if (conversionType === "mbps_to_MBs") {
+        inputValues.value = "100, 200, 300, 500, 1000";
+      } else {
+        inputValues.value = "10, 25, 50, 75, 100";
+      }
+    }
+    
+    function generate() {
+      // Get settings
+      const conversionType = document.querySelector('input[name="conversionType"]:checked').value;
+      const lossRate = parseInt(document.getElementById("lossRate").value) / 100;
+      const inputValues = document.getElementById("inputValues").value
+        .split(',')
+        .map(val => parseFloat(val.trim()))
+        .filter(val => !isNaN(val) && val > 0);
+      
+      if (inputValues.length === 0) {
+        alert("請輸入至少一個有效的數值");
+        return;
+      }
+      
+      const outputDiv = document.getElementById("output");
+      outputDiv.innerHTML = "";
+      let html = "";
+      
+      // Add explanation based on conversion type
+      if (conversionType === "mbps_to_MBs") {
+        html += `<div class="explanation">
+          <p>網路速度單位轉換說明：</p>
+          <p>1 Byte（位元組）= 8 bits（位元）</p>
+          <p>所以將 Mbps 轉換為 MB/s 時，需要 ÷ 8</p>
+          <p>另外，因為網路傳輸效率不可能達到100%，實際速度通常是理論速度的${lossRate * 100}%</p>
+        </div>`;
+      } else {
+        html += `<div class="explanation">
+          <p>網路速度單位轉換說明：</p>
+          <p>1 Byte（位元組）= 8 bits（位元）</p>
+          <p>所以將 MB/s 轉換為 Mbps 時，需要 × 8</p>
+          <p>另外，因為網路傳輸效率不可能達到100%，實際速度通常是理論速度的${lossRate * 100}%</p>
+        </div>`;
+      }
+      
+      // Generate problems
+      inputValues.forEach((value, index) => {
+        let latex = "";
+        
+        if (conversionType === "mbps_to_MBs") {
+          // Mbps to MB/s conversion (divide by 8)
+          const theoreticalMBs = value / 8;
+          const actualMBs = theoreticalMBs * lossRate;
+          
+          // First part: convert Mbps to MB/s (theoretical)
+          latex = `(${index + 1})\\quad ${value}\\text{ Mbps} \\div 8 = \\boxed{\\phantom{000000}\\vphantom{\\begin{matrix} a \\\\ b \\end{matrix}}}\\text{ MB/s (理論值)}`;
+          html += `<div class="latex">\\(${latex}\\)</div>`;
+          
+          // Second part: apply loss factor (actual speed)
+          if (lossRate < 1) {
+            const lossPercent = lossRate * 100;
+            latex = `(${index + 1}.1)\\quad ${value}\\text{ Mbps} \\div 8 \\times ${lossPercent}\\% = \\boxed{\\phantom{000000}\\vphantom{\\begin{matrix} a \\\\ b \\end{matrix}}}\\text{ MB/s (實際值)}`;
+            html += `<div class="latex">\\(${latex}\\)</div>`;
+          }
+        } else {
+          // MB/s to Mbps conversion (multiply by 8)
+          const theoreticalMbps = value * 8;
+          const actualMbps = theoreticalMbps * lossRate;
+          
+          // First part: convert MB/s to Mbps (theoretical)
+          latex = `(${index + 1})\\quad ${value}\\text{ MB/s} \\times 8 = \\boxed{\\phantom{000000}\\vphantom{\\begin{matrix} a \\\\ b \\end{matrix}}}\\text{ Mbps (理論值)}`;
+          html += `<div class="latex">\\(${latex}\\)</div>`;
+          
+          // Second part: apply loss factor (actual speed)
+          if (lossRate < 1) {
+            const lossPercent = lossRate * 100;
+            latex = `(${index + 1}.1)\\quad ${value}\\text{ MB/s} \\times 8 \\times ${lossPercent}\\% = \\boxed{\\phantom{000000}\\vphantom{\\begin{matrix} a \\\\ b \\end{matrix}}}\\text{ Mbps (實際值)}`;
+            html += `<div class="latex">\\(${latex}\\)</div>`;
+          }
+        }
+      });
+      
+      outputDiv.innerHTML = html;
+      MathJax.typeset();
+    }
+    
+    // Initialize
+    window.onload = function() {
+      updatePlaceholder();
+    };
+  </script>
+</body>
+</html>
